@@ -9,6 +9,7 @@ from authlib.common.urls import quote_url
 from authlib.common.urls import urlparse
 from authlib.oauth2.rfc6749 import InvalidRequestError
 from authlib.oauth2.rfc6749 import scope_to_list
+from authlib.oauth2.rfc6749.requests import get_parameter
 
 from ..errors import AccountSelectionRequiredError
 from ..errors import ConsentRequiredError
@@ -22,7 +23,7 @@ def is_openid_scope(scope):
 
 
 def validate_request_prompt(grant, redirect_uri, redirect_fragment=False):
-    prompt = grant.request.payload.data.get("prompt")
+    prompt = get_parameter(grant.request.payload, "prompt")
     end_user = grant.request.user
     if not prompt:
         if not end_user:
@@ -63,8 +64,8 @@ def validate_form_post_redirect_uri(grant, redirect_uri):
     :param redirect_uri: the redirect URI of the authorization request
     :raises InvalidRequestError: if the redirect URI scheme is not http or https
     """
-    response_mode = grant.request.payload.data.get(
-        "response_mode", grant.DEFAULT_RESPONSE_MODE
+    response_mode = get_parameter(
+        grant.request.payload, "response_mode", grant.DEFAULT_RESPONSE_MODE
     )
     if response_mode != "form_post":
         return
@@ -75,7 +76,7 @@ def validate_form_post_redirect_uri(grant, redirect_uri):
 
 
 def validate_nonce(request, exists_nonce, required=False):
-    nonce = request.payload.data.get("nonce")
+    nonce = get_parameter(request.payload, "nonce")
     if not nonce:
         if required:
             raise InvalidRequestError("Missing 'nonce' in request.")

@@ -2,26 +2,35 @@ from collections import defaultdict
 from functools import cached_property
 
 from flask.wrappers import Request
+from werkzeug.datastructures import MultiDict
 
 from authlib.oauth2.rfc6749 import JsonPayload
 from authlib.oauth2.rfc6749 import JsonRequest
 from authlib.oauth2.rfc6749 import OAuth2Payload
 from authlib.oauth2.rfc6749 import OAuth2Request
+from authlib.oauth2.rfc6749.requests import is_present
 
 
 class FlaskOAuth2Payload(OAuth2Payload):
     def __init__(self, request: Request):
         self._request = request
 
-    @property
+    @cached_property
     def data(self):
-        return self._request.values
+        # Blank occurrences are dropped, per RFC 6749 Section 3.1.  A
+        # MultiDict is returned, as before, so the merged ``request.values``
+        # interface (and its args-over-form precedence) is preserved.
+        return MultiDict(
+            (key, value)
+            for key, value in self._request.values.items(multi=True)
+            if is_present(value)
+        )
 
     @cached_property
     def datalist(self):
         values = defaultdict(list)
-        for k in self.data:
-            values[k].extend(self.data.getlist(k))
+        for k in self._request.values:
+            values[k].extend(self._request.values.getlist(k))
         return values
 
 

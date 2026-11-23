@@ -10,6 +10,7 @@ from authlib.oauth2.rfc6749 import InvalidScopeError
 from authlib.oauth2.rfc6749 import OAuth2Error
 from authlib.oauth2.rfc6749.errors import InvalidRequestError
 from authlib.oauth2.rfc6749.hooks import hooked
+from authlib.oauth2.rfc6749.requests import get_parameter
 
 from ._legacy import LegacyMixin
 from .util import create_half_hash
@@ -102,8 +103,8 @@ class OpenIDImplicitGrant(LegacyMixin, ImplicitGrant):
             params = error.get_body()
 
         # http://openid.net/specs/oauth-v2-multiple-response-types-1_0.html#ResponseModes
-        response_mode = self.request.payload.data.get(
-            "response_mode", self.DEFAULT_RESPONSE_MODE
+        response_mode = get_parameter(
+            self.request.payload, "response_mode", self.DEFAULT_RESPONSE_MODE
         )
         return create_response_mode_response(
             redirect_uri=redirect_uri,
@@ -148,7 +149,7 @@ class OpenIDImplicitGrant(LegacyMixin, ImplicitGrant):
             )
 
         claims = self.get_compatible_claims(self.request)
-        nonce = self.request.payload.data.get("nonce")
+        nonce = get_parameter(self.request.payload, "nonce")
         if nonce:
             claims["nonce"] = nonce
 

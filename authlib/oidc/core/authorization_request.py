@@ -1,5 +1,7 @@
 from authlib.oauth2.rfc6749 import ClientMixin
 from authlib.oauth2.rfc6749.requests import OAuth2Request
+from authlib.oauth2.rfc6749.requests import get_raw_parameter
+from authlib.oauth2.rfc6749.requests import has_raw_parameter
 from authlib.oauth2.rfc9101 import JWTAuthenticationRequest
 from authlib.oauth2.rfc9101.errors import InvalidRequestUriError
 
@@ -16,10 +18,13 @@ class OpenIDJWTAuthenticationRequest(JWTAuthenticationRequest):
     def _get_raw_request_object(
         self, request: OAuth2Request, client: ClientMixin
     ) -> str:
-        if "request_uri" in request.payload.data:
+        # A value-less ``request_uri`` is still a present parameter, see
+        # ``JWTAuthenticationRequest``.  It cannot match a registered URI, so
+        # it is rejected before any retrieval is attempted.
+        if has_raw_parameter(request.payload, "request_uri"):
             metadata = self.get_server_metadata()
             if metadata.get("require_request_uri_registration", False):
-                request_uri = request.payload.data["request_uri"]
+                request_uri = get_raw_parameter(request.payload, "request_uri")
                 if request_uri not in self.get_client_request_uris(client):
                     raise InvalidRequestUriError(state=request.payload.state)
         return super()._get_raw_request_object(request, client)

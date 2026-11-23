@@ -3,6 +3,8 @@ from flask import redirect
 from flask import request
 from flask import session
 
+from authlib.oauth2.rfc6749.requests import get_mapping_parameter
+
 from ..base_client import BaseApp
 from ..base_client import OAuth1Mixin
 from ..base_client import OAuth2Mixin
@@ -127,19 +129,19 @@ class FlaskOAuth2App(FlaskAppMixin, OAuth2Mixin, OpenIDMixin, BaseApp):
         :return: A token dict.
         """
         if request.method == "GET":
-            error = request.args.get("error")
+            error = get_mapping_parameter(request.args, "error")
             if error:
-                description = request.args.get("error_description")
+                description = get_mapping_parameter(request.args, "error_description")
                 raise OAuthError(error=error, description=description)
 
             params = {
-                "code": request.args.get("code"),
-                "state": request.args.get("state"),
+                "code": get_mapping_parameter(request.args, "code"),
+                "state": get_mapping_parameter(request.args, "state"),
             }
         else:
             params = {
-                "code": request.form.get("code"),
-                "state": request.form.get("state"),
+                "code": get_mapping_parameter(request.form, "code"),
+                "state": get_mapping_parameter(request.form, "state"),
             }
 
         state_data = self.framework.get_state_data(session, params.get("state"))

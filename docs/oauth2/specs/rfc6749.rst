@@ -98,3 +98,20 @@ Grant Types
 .. autoclass:: RefreshTokenGrant
     :member-order: bysource
     :members:
+
+
+Parameters without a value
+--------------------------
+
+:rfc:`6749#section-3.1` requires a request parameter that is sent without a
+value to be treated as if it were omitted. Authlib applies that rule uniformly
+to every endpoint and to both server and client integrations: an empty value
+is treated as absent, while ``0`` and ``False`` are kept as values. When the
+same parameter is sent more than once and one occurrence has no value, the
+value-bearing occurrence is used and the request is not rejected as a repeated
+parameter.
+
+The only exception is the ``request``/``request_uri`` pair defined by
+:rfc:`9101`. For these two parameters, presence selects a request mechanism,
+so a blank ``request_uri`` is still treated as present and rejected as an
+unusable URI instead of being silently ignored.

@@ -8,6 +8,7 @@ from authlib.oauth2.rfc6749 import JsonPayload
 from authlib.oauth2.rfc6749 import JsonRequest
 from authlib.oauth2.rfc6749 import OAuth2Payload
 from authlib.oauth2.rfc6749 import OAuth2Request
+from authlib.oauth2.rfc6749.requests import normalize_parameters
 
 
 class DjangoOAuth2Payload(OAuth2Payload):
@@ -16,10 +17,14 @@ class DjangoOAuth2Payload(OAuth2Payload):
 
     @cached_property
     def data(self):
-        data = {}
-        data.update(self._request.GET.dict())
-        data.update(self._request.POST.dict())
-        return data
+        # ``POST`` overrides ``GET`` on a collision, so keep the last
+        # value-bearing occurrence.  Blank occurrences are dropped, per
+        # RFC 6749 Section 3.1.
+        items = [
+            *self._request.GET.items(),
+            *self._request.POST.items(),
+        ]
+        return normalize_parameters(items, keep="last")
 
     @cached_property
     def datalist(self):

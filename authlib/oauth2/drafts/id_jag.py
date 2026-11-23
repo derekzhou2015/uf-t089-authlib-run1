@@ -36,6 +36,7 @@ from ..rfc6749 import InvalidScopeError
 from ..rfc6749 import TokenEndpointMixin
 from ..rfc6749 import UnauthorizedClientError
 from ..rfc6749 import scope_to_list
+from ..rfc6749.requests import get_form_parameter
 from ..rfc7523.assertion import sign_jwt_bearer_assertion
 from ..rfc7523.jwt_bearer import JWT_BEARER_GRANT_TYPE
 
@@ -156,7 +157,7 @@ class IDJAGGrant(BaseGrant, TokenEndpointMixin):
         """
         client = self.authenticate_token_endpoint_client()
 
-        assertion = self.request.form.get("assertion")
+        assertion = get_form_parameter(self.request, "assertion")
         if not assertion:
             raise InvalidRequestError("Missing 'assertion' in request")
 

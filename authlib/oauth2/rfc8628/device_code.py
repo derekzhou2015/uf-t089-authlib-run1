@@ -6,6 +6,7 @@ from ..rfc6749.errors import AccessDeniedError
 from ..rfc6749.errors import InvalidRequestError
 from ..rfc6749.errors import UnauthorizedClientError
 from ..rfc6749.hooks import hooked
+from ..rfc6749.requests import get_parameter
 from .errors import AuthorizationPendingError
 from .errors import ExpiredTokenError
 from .errors import SlowDownError
@@ -90,7 +91,7 @@ class DeviceCodeGrant(BaseGrant, TokenEndpointMixin):
             &device_code=GmRhmhcxhwAzkoEqiMEg_DnyEysNkuNhszIySk9eS
             &client_id=1406020730
         """
-        device_code = self.request.payload.data.get("device_code")
+        device_code = get_parameter(self.request.payload, "device_code")
         if not device_code:
             raise InvalidRequestError("Missing 'device_code' in payload")
 

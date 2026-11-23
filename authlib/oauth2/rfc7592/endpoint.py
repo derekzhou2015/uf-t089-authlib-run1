@@ -6,6 +6,7 @@ from ..rfc6749 import AccessDeniedError
 from ..rfc6749 import InvalidClientError
 from ..rfc6749 import InvalidRequestError
 from ..rfc6749 import UnauthorizedClientError
+from ..rfc6749.requests import get_parameter
 from ..rfc7591 import InvalidClientMetadataError
 from ..rfc7591.claims import ClientMetadataClaims
 
@@ -92,7 +93,7 @@ class ClientConfigurationEndpoint:
                 raise InvalidRequestError()
 
         # The client MUST include its 'client_id' field in the request
-        client_id = request.payload.data.get("client_id")
+        client_id = get_parameter(request.payload, "client_id")
         if not client_id:
             raise InvalidRequestError()
         if client_id != client.get_client_id():
@@ -100,9 +101,11 @@ class ClientConfigurationEndpoint:
 
         # If the client includes the 'client_secret' field in the request,
         # the value of this field MUST match the currently issued client
-        # secret for that client.
-        if "client_secret" in request.payload.data:
-            if not client.check_client_secret(request.payload.data["client_secret"]):
+        # secret for that client.  A value-less occurrence is treated as
+        # omitted, per RFC 6749 Section 3.1.
+        client_secret = get_parameter(request.payload, "client_secret")
+        if client_secret is not None:
+            if not client.check_client_secret(client_secret):
                 raise InvalidRequestError()
 
         client_metadata = self.extract_client_metadata(request)

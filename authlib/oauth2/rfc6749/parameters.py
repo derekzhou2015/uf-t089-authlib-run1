@@ -7,6 +7,7 @@ from .errors import MismatchingStateException
 from .errors import MissingCodeException
 from .errors import MissingTokenException
 from .errors import MissingTokenTypeException
+from .requests import is_present
 from .util import list_to_scope
 
 
@@ -51,10 +52,10 @@ def prepare_grant_uri(
         params.append(("state", state))
 
     for k, value in kwargs.items():
-        if value is not None:
+        if is_present(value):
             if isinstance(value, (list, tuple)):
                 for v in value:
-                    if v is not None:
+                    if is_present(v):
                         params.append((to_unicode(k), v))
             else:
                 params.append((to_unicode(k), value))
@@ -90,7 +91,7 @@ def prepare_token_request(grant_type, body="", redirect_uri=None, **kwargs):
     if "scope" in kwargs:
         kwargs["scope"] = list_to_scope(kwargs["scope"])
 
-    if grant_type == "authorization_code" and kwargs.get("code") is None:
+    if grant_type == "authorization_code" and not is_present(kwargs.get("code")):
         raise MissingCodeException()
 
     for k in kwargs:
@@ -193,7 +194,9 @@ def parse_implicit_response(uri, state=None):
                 &state=xyz&token_type=example&expires_in=3600
     """
     fragment = urlparse.urlparse(uri).fragment
-    params = dict(urlparse.parse_qsl(fragment, keep_blank_values=True))
+    # A parameter sent without a value is treated as omitted, per
+    # RFC 6749 Section 3.1; the default parse drops blank values.
+    params = dict(urlparse.parse_qsl(fragment))
 
     if "access_token" not in params:
         raise MissingTokenException()

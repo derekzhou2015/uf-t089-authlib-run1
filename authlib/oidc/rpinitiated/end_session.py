@@ -19,6 +19,7 @@ from authlib.common.urls import add_params_to_uri
 from authlib.oauth2.rfc6749.endpoint import Endpoint
 from authlib.oauth2.rfc6749.endpoint import EndpointRequest
 from authlib.oauth2.rfc6749.errors import InvalidRequestError
+from authlib.oauth2.rfc6749.requests import get_parameter
 
 if TYPE_CHECKING:
     from authlib.oauth2.rfc6749.requests import OAuth2Request
@@ -113,14 +114,16 @@ class EndSessionEndpoint(Endpoint):
         :returns: EndSessionRequest with validated data
         :raises InvalidRequestError: If validation fails
         """
-        data = request.payload.data
-
-        id_token_hint = data.get("id_token_hint")
-        client_id = data.get("client_id")
-        post_logout_redirect_uri = data.get("post_logout_redirect_uri")
-        state = data.get("state")
-        logout_hint = data.get("logout_hint")
-        ui_locales = data.get("ui_locales")
+        # Parameters sent without a value are treated as omitted, per
+        # RFC 6749 Section 3.1; a blank ``id_token_hint`` is thus no hint.
+        id_token_hint = get_parameter(request.payload, "id_token_hint")
+        client_id = get_parameter(request.payload, "client_id")
+        post_logout_redirect_uri = get_parameter(
+            request.payload, "post_logout_redirect_uri"
+        )
+        state = get_parameter(request.payload, "state")
+        logout_hint = get_parameter(request.payload, "logout_hint")
+        ui_locales = get_parameter(request.payload, "ui_locales")
 
         # rpinitiated §2: "When an id_token_hint parameter is present, the OP MUST
         # validate that it was the issuer of the ID Token."

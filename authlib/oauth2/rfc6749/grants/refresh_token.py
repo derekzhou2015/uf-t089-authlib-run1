@@ -12,6 +12,7 @@ from ..errors import InvalidRequestError
 from ..errors import InvalidScopeError
 from ..errors import UnauthorizedClientError
 from ..hooks import hooked
+from ..requests import get_form_parameter
 from ..util import scope_to_list
 from .base import BaseGrant
 from .base import TokenEndpointMixin
@@ -44,7 +45,7 @@ class RefreshTokenGrant(BaseGrant, TokenEndpointMixin):
         return client
 
     def _validate_request_token(self, client):
-        refresh_token = self.request.form.get("refresh_token")
+        refresh_token = get_form_parameter(self.request, "refresh_token")
         if refresh_token is None:
             raise InvalidRequestError("Missing 'refresh_token' in request.")
 

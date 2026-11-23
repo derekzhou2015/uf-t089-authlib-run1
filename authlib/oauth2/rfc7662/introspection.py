@@ -3,6 +3,7 @@ from authlib.consts import default_json_headers
 from ..rfc6749 import InvalidRequestError
 from ..rfc6749 import TokenEndpoint
 from ..rfc6749 import UnsupportedTokenTypeError
+from ..rfc6749.requests import get_form_parameter
 
 
 class IntrospectionEndpoint(TokenEndpoint):
@@ -34,17 +35,17 @@ class IntrospectionEndpoint(TokenEndpoint):
         """
         self.check_params(request, client)
         token = self.query_token(
-            request.form["token"], request.form.get("token_type_hint")
+            get_form_parameter(request, "token"),
+            get_form_parameter(request, "token_type_hint"),
         )
         if token and self.check_permission(token, client, request):
             return token
 
     def check_params(self, request, client):
-        params = request.form
-        if "token" not in params:
+        if get_form_parameter(request, "token") is None:
             raise InvalidRequestError()
 
-        hint = params.get("token_type_hint")
+        hint = get_form_parameter(request, "token_type_hint")
         if hint and hint not in self.SUPPORTED_TOKEN_TYPES:
             raise UnsupportedTokenTypeError()
 

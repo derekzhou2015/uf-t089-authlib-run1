@@ -13,6 +13,7 @@ from authlib.common.encoding import json_loads
 from authlib.deprecate import deprecate
 
 from ..rfc6749 import InvalidClientError
+from ..rfc6749.requests import get_form_parameter
 
 ASSERTION_TYPE = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 log = logging.getLogger(__name__)
@@ -41,9 +42,8 @@ class JWTBearerClientAssertion:
         self.leeway = leeway
 
     def __call__(self, query_client, request):
-        data = request.form
-        assertion_type = data.get("client_assertion_type")
-        assertion = data.get("client_assertion")
+        assertion_type = get_form_parameter(request, "client_assertion_type")
+        assertion = get_form_parameter(request, "client_assertion")
         if assertion_type == ASSERTION_TYPE and assertion:
             headers, claims = self.extract_assertion(assertion)
             # "sub" is read before the signature and the claims are verified,

@@ -1,5 +1,7 @@
 from django.http import HttpResponseRedirect
 
+from authlib.oauth2.rfc6749.requests import get_mapping_parameter
+
 from ..base_client import BaseApp
 from ..base_client import OAuth1Mixin
 from ..base_client import OAuth2Mixin
@@ -108,18 +110,18 @@ class DjangoOAuth2App(DjangoAppMixin, OAuth2Mixin, OpenIDMixin, BaseApp):
         :return: A token dict.
         """
         if request.method == "GET":
-            error = request.GET.get("error")
+            error = get_mapping_parameter(request.GET, "error")
             if error:
-                description = request.GET.get("error_description")
+                description = get_mapping_parameter(request.GET, "error_description")
                 raise OAuthError(error=error, description=description)
             params = {
-                "code": request.GET.get("code"),
-                "state": request.GET.get("state"),
+                "code": get_mapping_parameter(request.GET, "code"),
+                "state": get_mapping_parameter(request.GET, "state"),
             }
         else:
             params = {
-                "code": request.POST.get("code"),
-                "state": request.POST.get("state"),
+                "code": get_mapping_parameter(request.POST, "code"),
+                "state": get_mapping_parameter(request.POST, "state"),
             }
 
         state_data = self.framework.get_state_data(request.session, params.get("state"))

@@ -12,6 +12,8 @@ from ..rfc6749 import InvalidClientError
 from ..rfc6749 import InvalidRequestError
 from ..rfc6749.requests import BasicOAuth2Payload
 from ..rfc6749.requests import OAuth2Request
+from ..rfc6749.requests import get_raw_parameter
+from ..rfc6749.requests import has_raw_parameter
 from .errors import InvalidRequestObjectError
 from .errors import InvalidRequestUriError
 from .errors import RequestNotSupportedError
@@ -119,18 +121,25 @@ class JWTAuthenticationRequest:
         request: OAuth2Request,
         client: ClientMixin,
     ) -> bool:
-        if "request" in request.payload.data and "request_uri" in request.payload.data:
+        # The presence of ``request`` and ``request_uri`` is itself a protocol
+        # signal, so it is read from the raw occurrences.  A parameter sent
+        # without a value is still present for these two: treating it as
+        # omitted would silently switch the client to a different request
+        # mechanism, and RFC 9101 requires the attempt to be rejected.
+        has_request = has_raw_parameter(request.payload, "request")
+        has_request_uri = has_raw_parameter(request.payload, "request_uri")
+        if has_request and has_request_uri:
             raise InvalidRequestError(
                 "The 'request' and 'request_uri' parameters are mutually exclusive.",
                 state=request.payload.state,
             )
 
-        if "request" in request.payload.data:
+        if has_request:
             if not self.support_request:
                 raise RequestNotSupportedError(state=request.payload.state)
             return True
 
-        if "request_uri" in request.payload.data:
+        if has_request_uri:
             if not self.support_request_uri:
                 raise RequestUriNotSupportedError(state=request.payload.state)
             return True
@@ -159,8 +168,8 @@ class JWTAuthenticationRequest:
     def _get_raw_request_object(
         self, request: OAuth2Request, client: ClientMixin
     ) -> str:
-        if "request_uri" in request.payload.data:
-            request_uri = request.payload.data["request_uri"]
+        if has_raw_parameter(request.payload, "request_uri"):
+            request_uri = get_raw_parameter(request.payload, "request_uri")
             if not request_uri or not self.validate_request_uri(request_uri, client):
                 raise InvalidRequestUriError(state=request.payload.state)
             raw_request_object = self.get_request_object(request_uri)
@@ -168,7 +177,7 @@ class JWTAuthenticationRequest:
                 raise InvalidRequestUriError(state=request.payload.state)
 
         else:
-            raw_request_object = request.payload.data["request"]
+            raw_request_object = get_raw_parameter(request.payload, "request")
 
         return raw_request_object
 

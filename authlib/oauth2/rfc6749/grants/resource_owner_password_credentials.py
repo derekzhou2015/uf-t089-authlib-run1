@@ -3,6 +3,7 @@ import logging
 from ..errors import InvalidRequestError
 from ..errors import UnauthorizedClientError
 from ..hooks import hooked
+from ..requests import get_form_parameter
 from .base import BaseGrant
 from .base import TokenEndpointMixin
 
@@ -93,14 +94,15 @@ class ResourceOwnerPasswordCredentialsGrant(BaseGrant, TokenEndpointMixin):
                 f"The client is not authorized to use 'grant_type={self.GRANT_TYPE}'"
             )
 
-        params = self.request.form
-        if "username" not in params:
+        username = get_form_parameter(self.request, "username")
+        password = get_form_parameter(self.request, "password")
+        if username is None:
             raise InvalidRequestError("Missing 'username' in request.")
-        if "password" not in params:
+        if password is None:
             raise InvalidRequestError("Missing 'password' in request.")
 
-        log.debug("Authenticate user of %r", params["username"])
-        user = self.authenticate_user(params["username"], params["password"])
+        log.debug("Authenticate user of %r", username)
+        user = self.authenticate_user(username, password)
         if not user:
             raise InvalidRequestError(
                 "Invalid 'username' or 'password' in request.",

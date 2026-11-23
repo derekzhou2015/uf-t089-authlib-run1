@@ -76,8 +76,10 @@ def create_revocation_endpoint(session, token_model):
             return query_token(token, token_type_hint)
 
         def revoke_token(self, token, request):
+            from authlib.oauth2.rfc6749.requests import get_form_parameter
+
             now = int(time.time())
-            hint = request.form.get("token_type_hint")
+            hint = get_form_parameter(request, "token_type_hint")
             token.access_token_revoked_at = now
             if hint != "access_token":
                 token.refresh_token_revoked_at = now

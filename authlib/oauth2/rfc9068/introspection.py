@@ -5,6 +5,7 @@ from authlib.common.errors import ContinueIteration
 from authlib.consts import default_json_headers
 from authlib.oauth2.rfc6750.errors import InvalidTokenError
 
+from ..rfc6749.requests import get_form_parameter
 from ..rfc7662 import IntrospectionEndpoint
 from .claims import JWTAccessTokenClaims
 from .token_validator import JWTBearerTokenValidator
@@ -65,13 +66,13 @@ class JWTIntrospectionEndpoint(IntrospectionEndpoint):
         self.check_params(request, client)
 
         # do not attempt to decode refresh_tokens
-        if request.form.get("token_type_hint") not in ("access_token", None):
+        if get_form_parameter(request, "token_type_hint") not in ("access_token", None):
             raise ContinueIteration()
 
         validator = JWTBearerTokenValidator(issuer=self.issuer, resource_server=None)
         validator.get_jwks = self.get_jwks
         try:
-            token = validator.authenticate_token(request.form["token"])
+            token = validator.authenticate_token(get_form_parameter(request, "token"))
 
         # if the token is not a JWT, fall back to the regular flow
         except InvalidTokenError as exc:

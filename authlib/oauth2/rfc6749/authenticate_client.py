@@ -14,6 +14,7 @@ but the concept of naming are introduced in :rfc:`7591`.
 import logging
 
 from .errors import InvalidClientError
+from .requests import get_form_parameter
 from .util import extract_basic_authorization
 
 log = logging.getLogger(__name__)
@@ -79,9 +80,8 @@ def authenticate_client_secret_post(query_client, request):
     """Authenticate client by ``client_secret_post`` method. The client
     uses POST parameters for authentication.
     """
-    data = request.form
-    client_id = data.get("client_id")
-    client_secret = data.get("client_secret")
+    client_id = get_form_parameter(request, "client_id")
+    client_secret = get_form_parameter(request, "client_secret")
     if client_id and client_secret:
         client = _validate_client(query_client, client_id)
         if client.check_client_secret(client_secret):

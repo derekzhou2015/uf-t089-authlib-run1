@@ -4,6 +4,7 @@ from ..rfc6749 import InvalidGrantError
 from ..rfc6749 import InvalidRequestError
 from ..rfc6749 import TokenEndpoint
 from ..rfc6749 import UnsupportedTokenTypeError
+from ..rfc6749.requests import get_form_parameter
 
 
 class RevocationEndpoint(TokenEndpoint):
@@ -28,17 +29,18 @@ class RevocationEndpoint(TokenEndpoint):
         """
         self.check_params(request, client)
         token = self.query_token(
-            request.form["token"], request.form.get("token_type_hint")
+            get_form_parameter(request, "token"),
+            get_form_parameter(request, "token_type_hint"),
         )
         if token and not token.check_client(client):
             raise InvalidGrantError()
         return token
 
     def check_params(self, request, client):
-        if "token" not in request.form:
+        if get_form_parameter(request, "token") is None:
             raise InvalidRequestError()
 
-        hint = request.form.get("token_type_hint")
+        hint = get_form_parameter(request, "token_type_hint")
         if hint and hint not in self.SUPPORTED_TOKEN_TYPES:
             raise UnsupportedTokenTypeError()
 

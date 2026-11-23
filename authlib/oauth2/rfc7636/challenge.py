@@ -8,6 +8,9 @@ from authlib.common.encoding import urlsafe_b64encode
 from ..rfc6749 import InvalidGrantError
 from ..rfc6749 import InvalidRequestError
 from ..rfc6749 import OAuth2Request
+from ..rfc6749.requests import count_parameters
+from ..rfc6749.requests import get_form_parameter
+from ..rfc6749.requests import get_parameter
 
 CODE_VERIFIER_PATTERN = re.compile(r"^[a-zA-Z0-9\-._~]{43,128}$")
 CODE_CHALLENGE_PATTERN = re.compile(r"^[a-zA-Z0-9\-._~]{43,128}$")
@@ -68,15 +71,15 @@ class CodeChallenge:
 
     def validate_code_challenge(self, grant, redirect_uri):
         request: OAuth2Request = grant.request
-        challenge = request.payload.data.get("code_challenge")
-        method = request.payload.data.get("code_challenge_method")
+        challenge = get_parameter(request.payload, "code_challenge")
+        method = get_parameter(request.payload, "code_challenge_method")
         if not challenge and not method:
             return
 
         if not challenge:
             raise InvalidRequestError("Missing 'code_challenge'")
 
-        if len(request.payload.datalist.get("code_challenge", [])) > 1:
+        if count_parameters(request.payload, "code_challenge") > 1:
             raise InvalidRequestError("Multiple 'code_challenge' in request.")
 
         if not CODE_CHALLENGE_PATTERN.match(challenge):
@@ -85,12 +88,12 @@ class CodeChallenge:
         if method and method not in self.SUPPORTED_CODE_CHALLENGE_METHOD:
             raise InvalidRequestError("Unsupported 'code_challenge_method'")
 
-        if len(request.payload.datalist.get("code_challenge_method", [])) > 1:
+        if count_parameters(request.payload, "code_challenge_method") > 1:
             raise InvalidRequestError("Multiple 'code_challenge_method' in request.")
 
     def validate_code_verifier(self, grant, result):
         request: OAuth2Request = grant.request
-        verifier = request.form.get("code_verifier")
+        verifier = get_form_parameter(request, "code_verifier")
 
         # public client MUST verify code challenge
         if self.required and request.auth_method == "none" and not verifier:

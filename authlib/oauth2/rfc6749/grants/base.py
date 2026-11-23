@@ -4,6 +4,7 @@ from ..errors import InvalidRequestError
 from ..hooks import Hookable
 from ..hooks import hooked
 from ..requests import OAuth2Request
+from ..requests import count_parameters
 
 
 class BaseGrant(Hookable):
@@ -135,10 +136,11 @@ class AuthorizationEndpointMixin:
         """For the Authorization Endpoint, request and response parameters MUST NOT be included
         more than once. Per :rfc:`6749#section-3.1`.
         """
-        datalist = request.payload.datalist
         parameters = ["response_type", "client_id", "redirect_uri", "scope", "state"]
         for param in parameters:
-            if len(datalist.get(param, [])) > 1:
+            # Value-less occurrences are treated as omitted, so they neither
+            # supply a value nor count as a repetition.
+            if count_parameters(request.payload, param) > 1:
                 raise InvalidRequestError(
                     f"Multiple '{param}' in request.", state=request.payload.state
                 )

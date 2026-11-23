@@ -16,6 +16,7 @@ from ..rfc6749 import InvalidGrantError
 from ..rfc6749 import InvalidRequestError
 from ..rfc6749 import TokenEndpointMixin
 from ..rfc6749 import UnauthorizedClientError
+from ..rfc6749.requests import get_form_parameter
 from .assertion import sign_jwt_bearer_assertion
 
 log = logging.getLogger(__name__)
@@ -159,7 +160,7 @@ class JWTBearerGrant(BaseGrant, TokenEndpointMixin):
             eyJpc3Mi[...omitted for brevity...].
             J9l-ZhwP[...omitted for brevity...]
         """
-        assertion = self.request.form.get("assertion")
+        assertion = get_form_parameter(self.request, "assertion")
         if not assertion:
             raise InvalidRequestError("Missing 'assertion' in request")
 

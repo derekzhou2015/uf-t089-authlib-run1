@@ -1,6 +1,8 @@
 from starlette.datastructures import URL
 from starlette.responses import RedirectResponse
 
+from authlib.oauth2.rfc6749.requests import get_mapping_parameter
+
 from ..base_client import BaseApp
 from ..base_client import OAuthError
 from ..base_client.async_app import AsyncOAuth1Mixin
@@ -106,20 +108,22 @@ class StarletteOAuth2App(
 
     async def authorize_access_token(self, request, **kwargs):
         if request.scope.get("method", "GET") == "GET":
-            error = request.query_params.get("error")
+            error = get_mapping_parameter(request.query_params, "error")
             if error:
-                description = request.query_params.get("error_description")
+                description = get_mapping_parameter(
+                    request.query_params, "error_description"
+                )
                 raise OAuthError(error=error, description=description)
 
             params = {
-                "code": request.query_params.get("code"),
-                "state": request.query_params.get("state"),
+                "code": get_mapping_parameter(request.query_params, "code"),
+                "state": get_mapping_parameter(request.query_params, "state"),
             }
         else:
             async with request.form() as form:
                 params = {
-                    "code": form.get("code"),
-                    "state": form.get("state"),
+                    "code": get_mapping_parameter(form, "code"),
+                    "state": get_mapping_parameter(form, "state"),
                 }
 
         state_data = await self.framework.get_state_data(

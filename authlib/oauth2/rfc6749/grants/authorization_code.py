@@ -11,6 +11,7 @@ from ..errors import InvalidScopeError
 from ..errors import OAuth2Error
 from ..errors import UnauthorizedClientError
 from ..hooks import hooked
+from ..requests import get_form_parameter
 from .base import AuthorizationEndpointMixin
 from .base import BaseGrant
 from .base import TokenEndpointMixin
@@ -213,7 +214,7 @@ class AuthorizationCodeGrant(BaseGrant, AuthorizationEndpointMixin, TokenEndpoin
                 f"The client is not authorized to use 'grant_type={self.GRANT_TYPE}'"
             )
 
-        code = self.request.form.get("code")
+        code = get_form_parameter(self.request, "code")
         if code is None:
             raise InvalidRequestError("Missing 'code' in request.")
 
